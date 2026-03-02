@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker Session Tracker - Simple UI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Poker Session Tracker - Scroll Picker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
@@ -13,97 +13,133 @@
             --primary-color: #00ff88;
             --initial-color: #3498db;
             --addon-color: #f39c12;
-            --danger-color: #e74c3c;
             --bg-color: #121212;
             --card-bg: #1e1e1e;
+            --input-bg: #2a2a2a;
             --text-color: #e0e0e0;
         }
 
         body {
             font-family: 'Inter', -apple-system, sans-serif;
             background-color: var(--bg-color); color: var(--text-color);
-            margin: 0; padding: 20px; display: flex; justify-content: center;
+            margin: 0; padding: 15px; display: flex; justify-content: center;
+            overflow-x: hidden;
         }
 
-        .container { width: 100%; max-width: 600px; }
+        .container { width: 100%; max-width: 500px; }
         .card {
-            background-color: var(--card-bg); padding: 20px; border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px;
+            background-color: var(--card-bg); padding: 20px; border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4); margin-bottom: 20px;
+            border: 1px solid #333;
         }
 
-        #reportArea {
-            background-color: var(--card-bg); padding: 25px; border-radius: 16px; margin-bottom: 20px;
-        }
-
-        .session-header { margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 15px; }
-        .session-title-input {
-            width: 100%; background: transparent; border: none; border-bottom: 2px solid #444;
-            color: var(--primary-color); font-size: 1.5rem; font-weight: bold; outline: none; padding: 5px 0;
-        }
-
-        .input-section { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
-        .row { display: flex; gap: 8px; }
-        .time-box { display: flex; flex: 1.2; gap: 4px; }
-        input[type="time"], input[type="number"] {
-            padding: 12px; border-radius: 8px; border: 1px solid #444; background: #333; color: white; font-size: 16px; flex: 1;
-        }
-
-        .type-selector {
-            display: flex; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; justify-content: center;
-        }
-        .type-option { display: flex; align-items: center; gap: 5px; font-size: 14px; cursor: pointer; }
-
-        button { padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; }
-        .btn-add { background-color: var(--primary-color); color: #000; font-size: 1.1em; }
+        /* 時間入力セクションの改善 */
+        .input-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: stretch; }
         
-        .btn-copy { 
-            background-color: #ffffff; color: #000; margin-top: 15px; width: 100%; 
-            display: flex; align-items: center; justify-content: center;
+        .time-trigger {
+            flex: 1.5; background: var(--input-bg); border: 1px solid #444;
+            border-radius: 12px; padding: 12px; display: flex; align-items: center;
+            justify-content: space-between; cursor: pointer; position: relative;
         }
-        .btn-copy.success { background-color: var(--primary-color); }
-
-        .btn-clear { background-color: transparent; color: #888; border: 1px solid #444; width: 100%; margin-top: 10px; }
-
-        .chart-container { height: 320px; margin: 10px 0; }
-        .summary {
-            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
-            padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center;
+        .time-display { font-size: 18px; font-weight: bold; color: white; }
+        .btn-now-small {
+            background: #444; color: #fff; border: none; padding: 4px 8px;
+            border-radius: 6px; font-size: 11px; font-weight: bold;
         }
-        .stat-label { font-size: 11px; color: #888; display: block; margin-bottom: 5px; }
-        .stat-val { font-size: 16px; font-weight: bold; }
-        .pos { color: var(--primary-color); }
-        .neg { color: var(--danger-color); }
 
-        .history-list { margin-top: 20px; max-height: 200px; overflow-y: auto; border-top: 1px solid #333; padding-top: 15px; }
-        .history-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 6px; margin-bottom: 6px; font-size: 14px;
+        .chip-wrapper { flex: 1; }
+        input[type="number"] {
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #444; 
+            background: var(--input-bg); color: white; font-size: 18px; outline: none; box-sizing: border-box;
+            text-align: center; font-weight: bold;
         }
-        .btn-delete { background: none; color: #666; padding: 4px 8px; font-size: 16px; }
 
-        .exporting .no-capture { visibility: hidden; height: 0; margin: 0; padding: 0; }
+        /* スクロールピッカー（モーダル） */
+        .picker-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none; justify-content: center;
+            align-items: flex-end; z-index: 1000;
+        }
+        .picker-container {
+            background: #1e1e1e; width: 100%; max-width: 500px;
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+            padding: 20px; box-sizing: border-box; animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .picker-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .picker-btn { color: var(--primary-color); font-weight: bold; cursor: pointer; font-size: 16px; }
+        
+        .picker-wheels { display: flex; justify-content: center; height: 180px; overflow: hidden; position: relative; }
+        .picker-wheel {
+            flex: 1; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;
+            scrollbar-width: none; -ms-overflow-style: none; text-align: center;
+        }
+        .picker-wheel::-webkit-scrollbar { display: none; }
+        .picker-item {
+            height: 40px; line-height: 40px; font-size: 20px; color: #666;
+            scroll-snap-align: center; transition: 0.2s;
+        }
+        .picker-item.selected { color: white; font-size: 24px; font-weight: bold; }
+        .picker-highlight {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80%; height: 40px; border-top: 1px solid #444; border-bottom: 1px solid #444;
+            pointer-events: none; z-index: -1;
+        }
+
+        /* モードセレクター */
+        .type-selector { display: flex; gap: 6px; background: #111; padding: 4px; border-radius: 12px; margin-bottom: 15px; }
+        .type-option {
+            flex: 1; cursor: pointer; text-align: center; padding: 12px 0; border-radius: 10px; font-size: 13px; font-weight: bold;
+            transition: 0.3s; color: #666; border: 2px solid transparent;
+        }
+        .type-option input { display: none; }
+        .type-option:has(input[value="initial"]:checked) { border-color: var(--initial-color); color: var(--initial-color); background: rgba(52, 152, 219, 0.1); }
+        .type-option:has(input[value="normal"]:checked) { border-color: var(--primary-color); color: var(--primary-color); background: rgba(0, 255, 136, 0.1); }
+        .type-option:has(input[value="addon"]:checked) { border-color: var(--addon-color); color: var(--addon-color); background: rgba(243, 156, 18, 0.1); }
+
+        button.btn-add { 
+            width: 100%; background-color: var(--primary-color); color: #000; 
+            padding: 16px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; cursor: pointer;
+        }
+
+        #reportArea { background-color: var(--card-bg); padding: 20px; border-radius: 20px; margin-bottom: 20px; border: 1px solid #333; }
+        .chart-container { height: 300px; }
+        .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 14px; text-align: center; margin-top: 15px; }
+        .stat-label { font-size: 10px; color: #888; }
+        .stat-val { font-size: 14px; font-weight: bold; margin-top: 2px; display: block; }
+        
+        .btn-copy { background: #fff; color: #000; width: 100%; margin-top: 15px; padding: 14px; border-radius: 12px; font-weight: bold; border:none; cursor:pointer;}
+        .history-list { margin-top: 15px; max-height: 120px; overflow-y: auto; border-top: 1px solid #333; padding-top: 10px; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px; background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 4px; font-size: 13px; align-items: center; }
+        .btn-delete { background: none; color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.2); padding: 3px 6px; border-radius: 6px; font-size: 11px; }
+        .session-title-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid #333; color: var(--primary-color); font-size: 1.3rem; font-weight: bold; outline: none; padding-bottom: 8px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <div class="session-header">
-            <input type="text" id="sessionTitle" class="session-title-input" placeholder="セッション名を入力" oninput="saveTitle()">
-        </div>
+        <input type="text" id="sessionTitle" class="session-title-input" placeholder="セッション名" oninput="saveTitle()">
+        <div style="height: 15px;"></div>
+        
         <div class="input-section">
-            <div class="row">
-                <div class="time-box">
-                    <input type="time" id="timeInput">
-                    <button style="background:#555; color:white; padding:0 10px;" onclick="setCurrentTime()">現在</button>
+            <div class="input-row">
+                <div class="time-trigger" onclick="openPicker()">
+                    <span id="displayTime" class="time-display">00:00</span>
+                    <button class="btn-now-small" onclick="setNow(event)">現在</button>
                 </div>
-                <input type="number" id="chipInput" placeholder="スタック量">
+                <div class="chip-wrapper">
+                    <input type="number" id="chipInput" placeholder="スタック" inputmode="numeric">
+                </div>
             </div>
+
             <div class="type-selector">
-                <label class="type-option"><input type="radio" name="entryType" value="initial" id="typeInitial"> 初期</label>
-                <label class="type-option"><input type="radio" name="entryType" value="normal" id="typeNormal" checked> 推移</label>
-                <label class="type-option"><input type="radio" name="entryType" value="addon" id="typeAddon"> 追加</label>
+                <label class="type-option"><input type="radio" name="entryType" value="initial" id="typeInitial">初期</label>
+                <label class="type-option"><input type="radio" name="entryType" value="normal" id="typeNormal">推移</label>
+                <label class="type-option"><input type="radio" name="entryType" value="addon" id="typeAddon">追加</label>
             </div>
+            
             <button class="btn-add" onclick="addData()">データを記録</button>
         </div>
     </div>
@@ -111,122 +147,197 @@
     <div id="reportArea">
         <div class="chart-container"><canvas id="pokerChart"></canvas></div>
         <div class="summary">
-            <div><span class="stat-label">現在スタック</span><span id="statCurrent" class="stat-val">--</span></div>
-            <div><span class="stat-label">総投資額</span><span id="statTotalInvestment" class="stat-val" style="color:var(--addon-color)">0</span></div>
-            <div><span class="stat-label">純損益</span><span id="statProfit" class="stat-val">0</span></div>
+            <div><span class="stat-label">現在</span><span id="statCurrent" class="stat-val">--</span></div>
+            <div><span class="stat-label">投資</span><span id="statTotalInvestment" class="stat-val" style="color:var(--addon-color)">0</span></div>
+            <div><span class="stat-label">損益</span><span id="statProfit" class="stat-val">0</span></div>
         </div>
-        <button id="copyBtn" class="btn-copy no-capture" onclick="copyImageToClipboard()">
-            画像をコピー
-        </button>
+        <button class="btn-copy" onclick="copyImageToClipboard()">画像をコピー</button>
     </div>
 
-    <div class="card">
-        <h3>記録履歴</h3>
+    <div class="card" style="padding: 15px;">
         <div id="historyList" class="history-list"></div>
-        <button class="btn-clear" onclick="clearData()">全データリセット</button>
+        <button onclick="clearData()" style="background:transparent; border:none; color:#444; font-size:10px; width:100%; margin-top:10px; cursor:pointer;">全リセット</button>
+    </div>
+</div>
+
+<div id="timePickerOverlay" class="picker-overlay" onclick="closePicker()">
+    <div class="picker-container" onclick="event.stopPropagation()">
+        <div class="picker-header">
+            <span class="picker-btn" style="color: #666;" onclick="closePicker()">キャンセル</span>
+            <span style="font-weight:bold;">時間を選択</span>
+            <span class="picker-btn" onclick="confirmPicker()">完了</span>
+        </div>
+        <div class="picker-wheels">
+            <div class="picker-highlight"></div>
+            <div id="wheelHour" class="picker-wheel"></div>
+            <div id="wheelMin" class="picker-wheel"></div>
+        </div>
     </div>
 </div>
 
 <script>
-    const STORAGE_KEY_DATA = 'poker_stack_tracker_v10_data';
-    const STORAGE_KEY_TITLE = 'poker_stack_tracker_v10_title';
+    const STORAGE_KEY_DATA = 'poker_v20_data';
+    const STORAGE_KEY_TITLE = 'poker_v20_title';
     let pokerData = JSON.parse(localStorage.getItem(STORAGE_KEY_DATA)) || [];
     let chart;
+    let selectedHour = "00";
+    let selectedMin = "00";
 
-    document.getElementById('sessionTitle').value = localStorage.getItem(STORAGE_KEY_TITLE) || "";
-    setCurrentTime();
-    initChart();
-    checkIfFirstEntry();
-    renderHistory();
+    // ピッカーの初期化
+    function initPicker() {
+        const hWheel = document.getElementById('wheelHour');
+        const mWheel = document.getElementById('wheelMin');
+        
+        // 空白パディング（上下2つずつ）
+        const pad = '<div class="picker-item"></div>';
+        
+        let hContent = pad + pad;
+        for(let i=0; i<24; i++) hContent += `<div class="picker-item" data-val="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</div>`;
+        hWheel.innerHTML = hContent + pad + pad;
 
-    function setCurrentTime() { document.getElementById('timeInput').value = luxon.DateTime.now().toFormat('HH:mm'); }
+        let mContent = pad + pad;
+        for(let i=0; i<60; i++) mContent += `<div class="picker-item" data-val="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</div>`;
+        mWheel.innerHTML = mContent + pad + pad;
+
+        // スクロールイベントで選択状態を更新
+        [hWheel, mWheel].forEach(wheel => {
+            wheel.onscroll = () => {
+                const items = wheel.querySelectorAll('.picker-item[data-val]');
+                const center = wheel.scrollTop + 90; // 中心付近
+                items.forEach(item => {
+                    const rect = item.offsetTop;
+                    if(Math.abs(rect - wheel.scrollTop - 70) < 20) {
+                        item.classList.add('selected');
+                        if(wheel.id === 'wheelHour') selectedHour = item.dataset.val;
+                        else selectedMin = item.dataset.val;
+                    } else {
+                        item.classList.remove('selected');
+                    }
+                });
+            };
+        });
+    }
+
+    function openPicker() {
+        document.getElementById('timePickerOverlay').style.display = 'flex';
+        // 現在の値をセット
+        const [h, m] = document.getElementById('displayTime').textContent.split(':');
+        const hWheel = document.getElementById('wheelHour');
+        const mWheel = document.getElementById('wheelMin');
+        hWheel.scrollTop = parseInt(h) * 40;
+        mWheel.scrollTop = parseInt(m) * 40;
+    }
+
+    function confirmPicker() {
+        document.getElementById('displayTime').textContent = `${selectedHour}:${selectedMin}`;
+        closePicker();
+    }
+
+    function closePicker() { document.getElementById('timePickerOverlay').style.display = 'none'; }
+
+    function setNow(e) {
+        if(e) e.stopPropagation();
+        const now = luxon.DateTime.now().toFormat('HH:mm');
+        document.getElementById('displayTime').textContent = now;
+    }
+
+    function autoSelectMode() {
+        if (pokerData.length === 0) document.getElementById('typeInitial').checked = true;
+        else document.getElementById('typeNormal').checked = true;
+    }
+
     function saveTitle() { 
         const title = document.getElementById('sessionTitle').value;
         localStorage.setItem(STORAGE_KEY_TITLE, title);
-        chart.options.plugins.title.text = title || 'Poker Session Chart';
+        chart.options.plugins.title.text = title || 'Session Chart';
         chart.update();
     }
-    function checkIfFirstEntry() { if (pokerData.length === 0) document.getElementById('typeInitial').checked = true; }
-    function formatNum(num) { return new Intl.NumberFormat('ja-JP').format(num); }
+
+    function getChartBounds() {
+        if (pokerData.length === 0) return { min: undefined, max: undefined };
+        const times = pokerData.map(d => d.x);
+        const start = luxon.DateTime.fromMillis(Math.min(...times)).startOf('hour');
+        const end = luxon.DateTime.fromMillis(Math.max(...times)).plus({ hours: 1 }).startOf('hour');
+        return { min: start.toMillis(), max: end.toMillis() };
+    }
 
     function initChart() {
         const ctx = document.getElementById('pokerChart').getContext('2d');
+        const bounds = getChartBounds();
         chart = new Chart(ctx, {
             type: 'line',
             data: {
                 datasets: [{
-                    label: 'Stack',
-                    data: pokerData,
-                    borderColor: '#00ff88',
-                    borderWidth: 2, tension: 0, fill: false,
-                    pointBackgroundColor: (ctx) => {
-                        const v = ctx.dataset.data[ctx.dataIndex];
-                        return v?.type === 'initial' ? '#3498db' : v?.type === 'addon' ? '#f39c12' : '#00ff88';
-                    },
-                    pointRadius: (ctx) => (ctx.dataset.data[ctx.dataIndex]?.type !== 'normal' ? 7 : 4),
-                    pointBorderColor: '#fff'
+                    data: pokerData, borderColor: '#00ff88', borderWidth: 2.5, tension: 0.1, fill: false,
+                    pointBackgroundColor: (v) => v.raw?.type === 'initial' ? '#3498db' : v.raw?.type === 'addon' ? '#f39c12' : '#00ff88',
+                    pointRadius: (v) => v.raw?.type !== 'normal' ? 6 : 3, pointBorderColor: '#fff'
                 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 scales: {
-                    x: { type: 'time', time: { unit: 'minute', displayFormats: { minute: 'HH:mm' } }, grid: { color: '#333' } },
-                    y: { grid: { color: '#333' }, ticks: { callback: (val) => formatNum(val) } }
+                    x: { 
+                        type: 'time', min: bounds.min, max: bounds.max,
+                        time: { unit: 'minute', stepSize: 30, displayFormats: { minute: 'HH:mm' } }, 
+                        grid: { color: '#222' },
+                        ticks: {
+                            maxRotation: 0, autoSkip: true, font: { size: 10 }, color: '#666',
+                            callback: (val) => {
+                                const dt = luxon.DateTime.fromMillis(val);
+                                return (dt.minute === 0 || dt.minute === 30) ? dt.toFormat('HH:mm') : null;
+                            }
+                        }
+                    },
+                    y: { grid: { color: '#222' }, ticks: { callback: (val) => val.toLocaleString(), font: { size: 10 }, color: '#666' } }
                 },
-                plugins: {
-                    legend: { display: false },
-                    title: { display: true, text: document.getElementById('sessionTitle').value || 'Poker Session Chart', color: '#aaa', font: { size: 16 } }
-                }
+                plugins: { legend: { display: false }, title: { display: true, text: localStorage.getItem(STORAGE_KEY_TITLE) || 'Session Chart', color: '#888' } }
             }
         });
         updateStats();
     }
 
     function addData() {
-        const timeVal = document.getElementById('timeInput').value;
+        const timeStr = document.getElementById('displayTime').textContent;
         const chipVal = parseInt(document.getElementById('chipInput').value);
         const type = document.querySelector('input[name="entryType"]:checked').value;
-        if (!timeVal || isNaN(chipVal)) return alert('値を入力してください');
-        const fullTime = luxon.DateTime.now().set({hour: luxon.DateTime.fromISO(timeVal).hour, minute: luxon.DateTime.fromISO(timeVal).minute, second: 0}).toMillis();
+        if (isNaN(chipVal)) return;
+        
+        const [h, m] = timeStr.split(':');
+        const fullTime = luxon.DateTime.now().set({ hour: h, minute: m, second: 0, millisecond: 0 }).toMillis();
+
         pokerData.push({ id: Date.now(), x: fullTime, y: chipVal, type: type });
         pokerData.sort((a, b) => a.x - b.x);
-        saveAndRefresh();
-        document.getElementById('chipInput').value = '';
-        document.getElementById('typeNormal').checked = true;
-    }
-
-    function deleteEntry(id) {
-        if (!confirm('削除しますか？')) return;
-        pokerData = pokerData.filter(entry => entry.id !== id);
-        saveAndRefresh();
-    }
-
-    function saveAndRefresh() {
+        
         localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(pokerData));
+        const bounds = getChartBounds();
+        chart.options.scales.x.min = bounds.min;
+        chart.options.scales.x.max = bounds.max;
         chart.data.datasets[0].data = pokerData;
         chart.update();
+        
         updateStats();
         renderHistory();
-        checkIfFirstEntry();
+        document.getElementById('chipInput').value = '';
+        autoSelectMode();
     }
 
     function updateStats() {
         if (pokerData.length === 0) return;
-        let totalInvestment = 0;
+        let totalInv = 0;
         pokerData.forEach((entry, i) => {
-            if (entry.type === 'initial') totalInvestment += entry.y;
+            if (entry.type === 'initial') totalInv += entry.y;
             else if (entry.type === 'addon') {
                 const diff = entry.y - (pokerData[i-1]?.y || 0);
-                if (diff > 0) totalInvestment += diff;
+                if (diff > 0) totalInv += diff;
             }
         });
-        const currentChips = pokerData[pokerData.length - 1].y;
-        const netProfit = currentChips - totalInvestment;
-        document.getElementById('statCurrent').innerText = formatNum(currentChips);
-        document.getElementById('statTotalInvestment').innerText = formatNum(totalInvestment);
+        const current = pokerData[pokerData.length - 1].y;
+        const profit = current - totalInv;
+        document.getElementById('statCurrent').innerText = current.toLocaleString();
+        document.getElementById('statTotalInvestment').innerText = totalInv.toLocaleString();
         const profitEl = document.getElementById('statProfit');
-        profitEl.innerText = (netProfit > 0 ? '+' : '') + formatNum(netProfit);
-        profitEl.className = 'stat-val ' + (netProfit >= 0 ? 'pos' : 'neg');
+        profitEl.innerText = (profit > 0 ? '+' : '') + profit.toLocaleString();
+        profitEl.className = 'stat-val ' + (profit >= 0 ? 'pos' : 'neg');
     }
 
     function renderHistory() {
@@ -236,46 +347,35 @@
             const timeStr = luxon.DateTime.fromMillis(entry.x).toFormat('HH:mm');
             const item = document.createElement('div');
             item.className = 'history-item';
-            item.innerHTML = `<span style="color:#888">${timeStr}</span> <span style="flex:1; margin-left:10px; font-weight:bold">${formatNum(entry.y)}</span> <button class="btn-delete" onclick="deleteEntry(${entry.id})">削除</button>`;
+            item.innerHTML = `<span>${timeStr}</span> <span style="font-weight:bold">${entry.y.toLocaleString()}</span> <button class="btn-delete" onclick="deleteEntry(${entry.id})">削除</button>`;
             list.appendChild(item);
         });
     }
 
-    async function copyImageToClipboard() {
-        const area = document.getElementById('reportArea');
-        const btn = document.getElementById('copyBtn');
-        area.classList.add('exporting');
-        
-        try {
-            const canvas = await html2canvas(area, { backgroundColor: '#1e1e1e', scale: 2, logging: false });
-            canvas.toBlob(async (blob) => {
-                try {
-                    const data = [new ClipboardItem({ [blob.type]: blob })];
-                    await navigator.clipboard.write(data);
-                    btn.innerText = "コピー完了";
-                    btn.classList.add('success');
-                    setTimeout(() => {
-                        btn.innerText = "画像をコピー";
-                        btn.classList.remove('success');
-                    }, 2000);
-                } catch (err) {
-                    const link = document.createElement('a');
-                    link.download = 'poker-chart.png';
-                    link.href = canvas.toDataURL();
-                    link.click();
-                    alert('ブラウザの制限によりコピーできませんでした。画像を保存しました。');
-                }
-            });
-        } catch (err) {
-            alert('コピーに失敗しました');
-        } finally {
-            area.classList.remove('exporting');
-        }
+    function deleteEntry(id) {
+        if (!confirm('削除しますか？')) return;
+        pokerData = pokerData.filter(entry => entry.id !== id);
+        localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(pokerData));
+        location.reload();
     }
 
-    function clearData() {
-        if (confirm('リセットしますか？')) { localStorage.clear(); location.reload(); }
+    async function copyImageToClipboard() {
+        const area = document.getElementById('reportArea');
+        const canvas = await html2canvas(area, { backgroundColor: '#1e1e1e', scale: 2 });
+        canvas.toBlob(blob => {
+            navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+            alert('コピーしました');
+        });
     }
+
+    function clearData() { if (confirm('全リセットしますか？')) { localStorage.clear(); location.reload(); } }
+
+    document.getElementById('sessionTitle').value = localStorage.getItem(STORAGE_KEY_TITLE) || "";
+    initPicker();
+    setNow();
+    initChart();
+    renderHistory();
+    autoSelectMode();
 </script>
 
 </body>
