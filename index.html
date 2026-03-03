@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Poker Session Tracker - Scroll Picker</title>
+    <title>Poker Session Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
@@ -13,6 +13,7 @@
             --primary-color: #00ff88;
             --initial-color: #3498db;
             --addon-color: #f39c12;
+            --danger-color: #e74c3c;
             --bg-color: #121212;
             --card-bg: #1e1e1e;
             --input-bg: #2a2a2a;
@@ -26,72 +27,59 @@
             overflow-x: hidden;
         }
 
-        .container { width: 100%; max-width: 500px; }
+        .container { width: 100%; max-width: 500px; position: relative; }
         .card {
             background-color: var(--card-bg); padding: 20px; border-radius: 20px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.4); margin-bottom: 20px;
-            border: 1px solid #333;
+            border: 1px solid #333; position: relative;
         }
 
-        /* 時間入力セクションの改善 */
+        .btn-help {
+            position: absolute; top: 20px; right: 20px;
+            width: 24px; height: 24px; border-radius: 50%;
+            background: #444; color: #fff; border: none;
+            font-size: 14px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: none; justify-content: center;
+            align-items: center; z-index: 2000; padding: 20px; box-sizing: border-box;
+        }
+        .modal-content {
+            background: #2a2a2a; padding: 25px; border-radius: 20px;
+            max-width: 400px; width: 100%; border: 1px solid #444;
+        }
+        .modal-content h3 { color: var(--primary-color); margin-top: 0; }
+        .help-section { margin-bottom: 15px; font-size: 14px; line-height: 1.6; }
+        .help-tag { padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-right: 5px; }
+        .tag-init { background: rgba(52, 152, 219, 0.2); color: var(--initial-color); }
+        .tag-norm { background: rgba(0, 255, 136, 0.2); color: var(--primary-color); }
+        .tag-add { background: rgba(243, 156, 18, 0.2); color: var(--addon-color); }
+
         .input-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: stretch; }
-        
         .time-trigger {
             flex: 1.5; background: var(--input-bg); border: 1px solid #444;
             border-radius: 12px; padding: 12px; display: flex; align-items: center;
-            justify-content: space-between; cursor: pointer; position: relative;
+            justify-content: space-between; cursor: pointer;
         }
         .time-display { font-size: 18px; font-weight: bold; color: white; }
         .btn-now-small {
             background: #444; color: #fff; border: none; padding: 4px 8px;
             border-radius: 6px; font-size: 11px; font-weight: bold;
         }
-
-        .chip-wrapper { flex: 1; }
-        input[type="number"] {
+        .chip-wrapper { flex: 1.2; }
+        input[type="text"].chip-input {
             width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #444; 
-            background: var(--input-bg); color: white; font-size: 18px; outline: none; box-sizing: border-box;
-            text-align: center; font-weight: bold;
+            background: var(--input-bg); color: white; font-size: 18px; text-align: center; font-weight: bold;
+            box-sizing: border-box; outline: none;
         }
 
-        /* スクロールピッカー（モーダル） */
-        .picker-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: none; justify-content: center;
-            align-items: flex-end; z-index: 1000;
-        }
-        .picker-container {
-            background: #1e1e1e; width: 100%; max-width: 500px;
-            border-top-left-radius: 20px; border-top-right-radius: 20px;
-            padding: 20px; box-sizing: border-box; animation: slideUp 0.3s ease-out;
-        }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        .picker-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .picker-btn { color: var(--primary-color); font-weight: bold; cursor: pointer; font-size: 16px; }
-        
-        .picker-wheels { display: flex; justify-content: center; height: 180px; overflow: hidden; position: relative; }
-        .picker-wheel {
-            flex: 1; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;
-            scrollbar-width: none; -ms-overflow-style: none; text-align: center;
-        }
-        .picker-wheel::-webkit-scrollbar { display: none; }
-        .picker-item {
-            height: 40px; line-height: 40px; font-size: 20px; color: #666;
-            scroll-snap-align: center; transition: 0.2s;
-        }
-        .picker-item.selected { color: white; font-size: 24px; font-weight: bold; }
-        .picker-highlight {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 80%; height: 40px; border-top: 1px solid #444; border-bottom: 1px solid #444;
-            pointer-events: none; z-index: -1;
-        }
-
-        /* モードセレクター */
         .type-selector { display: flex; gap: 6px; background: #111; padding: 4px; border-radius: 12px; margin-bottom: 15px; }
         .type-option {
             flex: 1; cursor: pointer; text-align: center; padding: 12px 0; border-radius: 10px; font-size: 13px; font-weight: bold;
-            transition: 0.3s; color: #666; border: 2px solid transparent;
+            color: #666; border: 2px solid transparent; transition: 0.3s;
         }
         .type-option input { display: none; }
         .type-option:has(input[value="initial"]:checked) { border-color: var(--initial-color); color: var(--initial-color); background: rgba(52, 152, 219, 0.1); }
@@ -102,18 +90,31 @@
             width: 100%; background-color: var(--primary-color); color: #000; 
             padding: 16px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; cursor: pointer;
         }
-
+        .btn-copy { background: #fff; color: #000; width: 100%; margin-top: 15px; padding: 14px; border-radius: 12px; font-weight: bold; border:none; cursor:pointer;}
+        
+        .history-list { margin-top: 15px; max-height: 120px; overflow-y: auto; border-top: 1px solid #333; padding-top: 10px; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px; background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 4px; font-size: 13px; align-items: center; }
+        .btn-delete { background: none; color: var(--danger-color); border: 1px solid rgba(231, 76, 60, 0.2); padding: 3px 6px; border-radius: 6px; font-size: 11px; }
+        
         #reportArea { background-color: var(--card-bg); padding: 20px; border-radius: 20px; margin-bottom: 20px; border: 1px solid #333; }
         .chart-container { height: 300px; }
         .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 14px; text-align: center; margin-top: 15px; }
         .stat-label { font-size: 10px; color: #888; }
         .stat-val { font-size: 14px; font-weight: bold; margin-top: 2px; display: block; }
-        
-        .btn-copy { background: #fff; color: #000; width: 100%; margin-top: 15px; padding: 14px; border-radius: 12px; font-weight: bold; border:none; cursor:pointer;}
-        .history-list { margin-top: 15px; max-height: 120px; overflow-y: auto; border-top: 1px solid #333; padding-top: 10px; }
-        .history-item { display: flex; justify-content: space-between; padding: 8px; background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 4px; font-size: 13px; align-items: center; }
-        .btn-delete { background: none; color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.2); padding: 3px 6px; border-radius: 6px; font-size: 11px; }
-        .session-title-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid #333; color: var(--primary-color); font-size: 1.3rem; font-weight: bold; outline: none; padding-bottom: 8px; }
+        .session-title-input { width: 85%; background: transparent; border: none; border-bottom: 1px solid #333; color: var(--primary-color); font-size: 1.3rem; font-weight: bold; outline: none; padding-bottom: 8px; }
+
+        /* タイムピッカー用 */
+        .picker-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: flex-end; z-index: 1000; }
+        .picker-container { background: #1e1e1e; width: 100%; max-width: 500px; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 20px; box-sizing: border-box; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .picker-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .picker-btn { color: var(--primary-color); font-weight: bold; cursor: pointer; }
+        .picker-wheels { display: flex; justify-content: center; height: 180px; overflow: hidden; position: relative; }
+        .picker-wheel { flex: 1; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; text-align: center; }
+        .picker-wheel::-webkit-scrollbar { display: none; }
+        .picker-item { height: 40px; line-height: 40px; font-size: 20px; color: #666; scroll-snap-align: center; }
+        .picker-item.selected { color: white; font-size: 24px; font-weight: bold; }
+        .picker-highlight { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 40px; border-top: 1px solid #444; border-bottom: 1px solid #444; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -121,8 +122,8 @@
 <div class="container">
     <div class="card">
         <input type="text" id="sessionTitle" class="session-title-input" placeholder="セッション名" oninput="saveTitle()">
+        <button class="btn-help" onclick="toggleHelp(true)">?</button>
         <div style="height: 15px;"></div>
-        
         <div class="input-section">
             <div class="input-row">
                 <div class="time-trigger" onclick="openPicker()">
@@ -130,16 +131,14 @@
                     <button class="btn-now-small" onclick="setNow(event)">現在</button>
                 </div>
                 <div class="chip-wrapper">
-                    <input type="number" id="chipInput" placeholder="スタック" inputmode="numeric">
+                    <input type="text" id="chipInput" class="chip-input" placeholder="スタック/追加" inputmode="numeric" oninput="formatInput(this)">
                 </div>
             </div>
-
             <div class="type-selector">
                 <label class="type-option"><input type="radio" name="entryType" value="initial" id="typeInitial">初期</label>
                 <label class="type-option"><input type="radio" name="entryType" value="normal" id="typeNormal">推移</label>
                 <label class="type-option"><input type="radio" name="entryType" value="addon" id="typeAddon">追加</label>
             </div>
-            
             <button class="btn-add" onclick="addData()">データを記録</button>
         </div>
     </div>
@@ -148,71 +147,69 @@
         <div class="chart-container"><canvas id="pokerChart"></canvas></div>
         <div class="summary">
             <div><span class="stat-label">現在</span><span id="statCurrent" class="stat-val">--</span></div>
-            <div><span class="stat-label">投資</span><span id="statTotalInvestment" class="stat-val" style="color:var(--addon-color)">0</span></div>
-            <div><span class="stat-label">損益</span><span id="statProfit" class="stat-val">0</span></div>
+            <div><span class="stat-label">総投資額</span><span id="statTotalInvestment" class="stat-val" style="color:var(--addon-color)">0</span></div>
+            <div><span class="stat-label">純損益</span><span id="statProfit" class="stat-val">0</span></div>
         </div>
         <button class="btn-copy" onclick="copyImageToClipboard()">画像をコピー</button>
     </div>
 
     <div class="card" style="padding: 15px;">
         <div id="historyList" class="history-list"></div>
-        <button onclick="clearData()" style="background:transparent; border:none; color:#444; font-size:10px; width:100%; margin-top:10px; cursor:pointer;">全リセット</button>
+        <button class="btn-reset-full" style="width:100%; margin-top:20px; padding:10px; border-radius:10px; background:rgba(231,76,60,0.15); color:var(--danger-color); border:1px solid rgba(231,76,60,0.3); font-size:12px; font-weight:bold; cursor:pointer;" onclick="clearData()">全てのデータをリセット</button>
+    </div>
+</div>
+
+<div id="helpModal" class="modal-overlay" onclick="toggleHelp(false)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3>操作ガイド</h3>
+        <div class="help-section"><span class="help-tag tag-init">初期</span> セッション開始時のスタックを入力する。総投資額に計上される。</div>
+        <div class="help-section"><span class="help-tag tag-norm">推移</span> プレイ中のスタックを任意のタイミングで入力する。</div>
+        <div class="help-section"><span class="help-tag tag-add">追加</span> アドオン/リバイした額を入力。直前のスタックに加算され、総投資額にも計上される。</div>
+        <button class="btn-add" onclick="toggleHelp(false)" style="padding:10px; margin-top:10px;">閉じる</button>
     </div>
 </div>
 
 <div id="timePickerOverlay" class="picker-overlay" onclick="closePicker()">
     <div class="picker-container" onclick="event.stopPropagation()">
-        <div class="picker-header">
-            <span class="picker-btn" style="color: #666;" onclick="closePicker()">キャンセル</span>
-            <span style="font-weight:bold;">時間を選択</span>
-            <span class="picker-btn" onclick="confirmPicker()">完了</span>
-        </div>
-        <div class="picker-wheels">
-            <div class="picker-highlight"></div>
-            <div id="wheelHour" class="picker-wheel"></div>
-            <div id="wheelMin" class="picker-wheel"></div>
-        </div>
+        <div class="picker-header"><span class="picker-btn" onclick="closePicker()">戻る</span><span class="picker-btn" onclick="confirmPicker()">完了</span></div>
+        <div class="picker-wheels"><div class="picker-highlight"></div><div id="wheelHour" class="picker-wheel"></div><div id="wheelMin" class="picker-wheel"></div></div>
     </div>
 </div>
 
 <script>
-    const STORAGE_KEY_DATA = 'poker_v20_data';
-    const STORAGE_KEY_TITLE = 'poker_v20_title';
+    const STORAGE_KEY_DATA = 'poker_v28_data';
+    const STORAGE_KEY_TITLE = 'poker_v28_title';
     let pokerData = JSON.parse(localStorage.getItem(STORAGE_KEY_DATA)) || [];
     let chart;
     let selectedHour = "00";
     let selectedMin = "00";
 
-    // ピッカーの初期化
+    function formatInput(el) {
+        let val = el.value.replace(/,/g, '').replace(/\D/g, '');
+        el.value = val ? Number(val).toLocaleString() : '';
+    }
+
+    function toggleHelp(show) { document.getElementById('helpModal').style.display = show ? 'flex' : 'none'; }
+
     function initPicker() {
         const hWheel = document.getElementById('wheelHour');
         const mWheel = document.getElementById('wheelMin');
-        
-        // 空白パディング（上下2つずつ）
         const pad = '<div class="picker-item"></div>';
-        
         let hContent = pad + pad;
         for(let i=0; i<24; i++) hContent += `<div class="picker-item" data-val="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</div>`;
         hWheel.innerHTML = hContent + pad + pad;
-
         let mContent = pad + pad;
         for(let i=0; i<60; i++) mContent += `<div class="picker-item" data-val="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</div>`;
         mWheel.innerHTML = mContent + pad + pad;
-
-        // スクロールイベントで選択状態を更新
         [hWheel, mWheel].forEach(wheel => {
             wheel.onscroll = () => {
-                const items = wheel.querySelectorAll('.picker-item[data-val]');
-                const center = wheel.scrollTop + 90; // 中心付近
-                items.forEach(item => {
-                    const rect = item.offsetTop;
-                    if(Math.abs(rect - wheel.scrollTop - 70) < 20) {
+                const center = wheel.scrollTop + 80;
+                wheel.querySelectorAll('.picker-item[data-val]').forEach(item => {
+                    if(Math.abs(item.offsetTop - center) < 20) {
                         item.classList.add('selected');
                         if(wheel.id === 'wheelHour') selectedHour = item.dataset.val;
                         else selectedMin = item.dataset.val;
-                    } else {
-                        item.classList.remove('selected');
-                    }
+                    } else { item.classList.remove('selected'); }
                 });
             };
         });
@@ -220,45 +217,20 @@
 
     function openPicker() {
         document.getElementById('timePickerOverlay').style.display = 'flex';
-        // 現在の値をセット
         const [h, m] = document.getElementById('displayTime').textContent.split(':');
-        const hWheel = document.getElementById('wheelHour');
-        const mWheel = document.getElementById('wheelMin');
-        hWheel.scrollTop = parseInt(h) * 40;
-        mWheel.scrollTop = parseInt(m) * 40;
+        setTimeout(() => {
+            document.getElementById('wheelHour').scrollTop = parseInt(h) * 40;
+            document.getElementById('wheelMin').scrollTop = parseInt(m) * 40;
+        }, 10);
     }
-
-    function confirmPicker() {
-        document.getElementById('displayTime').textContent = `${selectedHour}:${selectedMin}`;
-        closePicker();
-    }
-
+    function confirmPicker() { document.getElementById('displayTime').textContent = `${selectedHour}:${selectedMin}`; closePicker(); }
     function closePicker() { document.getElementById('timePickerOverlay').style.display = 'none'; }
-
-    function setNow(e) {
-        if(e) e.stopPropagation();
-        const now = luxon.DateTime.now().toFormat('HH:mm');
-        document.getElementById('displayTime').textContent = now;
-    }
-
-    function autoSelectMode() {
-        if (pokerData.length === 0) document.getElementById('typeInitial').checked = true;
-        else document.getElementById('typeNormal').checked = true;
-    }
-
-    function saveTitle() { 
-        const title = document.getElementById('sessionTitle').value;
-        localStorage.setItem(STORAGE_KEY_TITLE, title);
-        chart.options.plugins.title.text = title || 'Session Chart';
-        chart.update();
-    }
+    function setNow(e) { if(e) e.stopPropagation(); const now = luxon.DateTime.now(); document.getElementById('displayTime').textContent = now.toFormat('HH:mm'); selectedHour = now.toFormat('HH'); selectedMin = now.toFormat('mm'); }
 
     function getChartBounds() {
         if (pokerData.length === 0) return { min: undefined, max: undefined };
         const times = pokerData.map(d => d.x);
-        const start = luxon.DateTime.fromMillis(Math.min(...times)).startOf('hour');
-        const end = luxon.DateTime.fromMillis(Math.max(...times)).plus({ hours: 1 }).startOf('hour');
-        return { min: start.toMillis(), max: end.toMillis() };
+        return { min: Math.min(...times) - 1800000, max: Math.max(...times) + 1800000 };
     }
 
     function initChart() {
@@ -268,9 +240,9 @@
             type: 'line',
             data: {
                 datasets: [{
-                    data: pokerData, borderColor: '#00ff88', borderWidth: 2.5, tension: 0.1, fill: false,
-                    pointBackgroundColor: (v) => v.raw?.type === 'initial' ? '#3498db' : v.raw?.type === 'addon' ? '#f39c12' : '#00ff88',
-                    pointRadius: (v) => v.raw?.type !== 'normal' ? 6 : 3, pointBorderColor: '#fff'
+                    data: pokerData, borderColor: '#00ff88', borderWidth: 2.5, tension: 0.1,
+                    pointBackgroundColor: (c) => c.raw?.type === 'initial' ? '#3498db' : (c.raw?.type === 'addon' ? '#f39c12' : '#00ff88'),
+                    pointRadius: (c) => c.raw?.type !== 'normal' ? 6 : 3,
                 }]
             },
             options: {
@@ -278,17 +250,16 @@
                 scales: {
                     x: { 
                         type: 'time', min: bounds.min, max: bounds.max,
-                        time: { unit: 'minute', stepSize: 30, displayFormats: { minute: 'HH:mm' } }, 
+                        time: { unit: 'minute', stepSize: 30, displayFormats: { minute: 'HH:mm' } },
                         grid: { color: '#222' },
-                        ticks: {
-                            maxRotation: 0, autoSkip: true, font: { size: 10 }, color: '#666',
-                            callback: (val) => {
-                                const dt = luxon.DateTime.fromMillis(val);
+                        ticks: { color: '#666', font: { size: 10 }, maxRotation: 0, autoSkip: false,
+                            callback: function(v) {
+                                const dt = luxon.DateTime.fromMillis(v);
                                 return (dt.minute === 0 || dt.minute === 30) ? dt.toFormat('HH:mm') : null;
                             }
                         }
                     },
-                    y: { grid: { color: '#222' }, ticks: { callback: (val) => val.toLocaleString(), font: { size: 10 }, color: '#666' } }
+                    y: { grid: { color: '#222' }, ticks: { color: '#666', font: { size: 10 }, callback: v => v.toLocaleString() } }
                 },
                 plugins: { legend: { display: false }, title: { display: true, text: localStorage.getItem(STORAGE_KEY_TITLE) || 'Session Chart', color: '#888' } }
             }
@@ -298,46 +269,70 @@
 
     function addData() {
         const timeStr = document.getElementById('displayTime').textContent;
-        const chipVal = parseInt(document.getElementById('chipInput').value);
+        const inputVal = parseInt(document.getElementById('chipInput').value.replace(/,/g, ''));
         const type = document.querySelector('input[name="entryType"]:checked').value;
-        if (isNaN(chipVal)) return;
-        
+        if (isNaN(inputVal)) return;
+
         const [h, m] = timeStr.split(':');
         const fullTime = luxon.DateTime.now().set({ hour: h, minute: m, second: 0, millisecond: 0 }).toMillis();
 
-        pokerData.push({ id: Date.now(), x: fullTime, y: chipVal, type: type });
-        pokerData.sort((a, b) => a.x - b.x);
+        let finalY = inputVal;
+        let investmentAmount = 0;
+
+        if (type === 'initial') {
+            investmentAmount = inputVal;
+        } else if (type === 'addon') {
+            const prevEntry = pokerData.length > 0 ? pokerData[pokerData.length - 1] : null;
+            const prevY = prevEntry ? prevEntry.y : 0;
+            finalY = prevY + inputVal;
+            investmentAmount = inputVal;
+        }
+
+        pokerData.push({ 
+            id: Date.now(), 
+            x: fullTime, 
+            y: finalY, 
+            type: type, 
+            invest: investmentAmount 
+        });
         
+        pokerData.sort((a, b) => a.x - b.x);
+        saveAndRefresh();
+        document.getElementById('chipInput').value = '';
+        autoSelectMode();
+    }
+
+    function saveAndRefresh() {
         localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(pokerData));
         const bounds = getChartBounds();
         chart.options.scales.x.min = bounds.min;
         chart.options.scales.x.max = bounds.max;
         chart.data.datasets[0].data = pokerData;
         chart.update();
-        
         updateStats();
         renderHistory();
-        document.getElementById('chipInput').value = '';
-        autoSelectMode();
     }
 
     function updateStats() {
-        if (pokerData.length === 0) return;
-        let totalInv = 0;
-        pokerData.forEach((entry, i) => {
-            if (entry.type === 'initial') totalInv += entry.y;
-            else if (entry.type === 'addon') {
-                const diff = entry.y - (pokerData[i-1]?.y || 0);
-                if (diff > 0) totalInv += diff;
-            }
-        });
+        const pEl = document.getElementById('statProfit');
+        
+        if (pokerData.length === 0) {
+            document.getElementById('statCurrent').innerText = '--';
+            document.getElementById('statTotalInvestment').innerText = '0';
+            pEl.innerText = '0';
+            pEl.style.color = 'white';
+            return;
+        }
+
+        const totalInvestment = pokerData.reduce((sum, entry) => sum + (entry.invest || 0), 0);
         const current = pokerData[pokerData.length - 1].y;
-        const profit = current - totalInv;
+        const profit = current - totalInvestment;
+
         document.getElementById('statCurrent').innerText = current.toLocaleString();
-        document.getElementById('statTotalInvestment').innerText = totalInv.toLocaleString();
-        const profitEl = document.getElementById('statProfit');
-        profitEl.innerText = (profit > 0 ? '+' : '') + profit.toLocaleString();
-        profitEl.className = 'stat-val ' + (profit >= 0 ? 'pos' : 'neg');
+        document.getElementById('statTotalInvestment').innerText = totalInvestment.toLocaleString();
+        
+        pEl.innerText = (profit > 0 ? '+' : '') + profit.toLocaleString();
+        pEl.style.color = profit > 0 ? 'var(--primary-color)' : (profit < 0 ? 'var(--danger-color)' : 'white');
     }
 
     function renderHistory() {
@@ -347,36 +342,27 @@
             const timeStr = luxon.DateTime.fromMillis(entry.x).toFormat('HH:mm');
             const item = document.createElement('div');
             item.className = 'history-item';
-            item.innerHTML = `<span>${timeStr}</span> <span style="font-weight:bold">${entry.y.toLocaleString()}</span> <button class="btn-delete" onclick="deleteEntry(${entry.id})">削除</button>`;
+            const detail = entry.type === 'addon' ? `<small style="color:var(--addon-color);margin-right:8px;">+${entry.invest.toLocaleString()}</small>` : '';
+            item.innerHTML = `<span>${timeStr}</span><span>${detail}<span style="font-weight:bold">${entry.y.toLocaleString()}</span></span><button class="btn-delete" onclick="deleteEntry(${entry.id})">削除</button>`;
             list.appendChild(item);
         });
     }
 
-    function deleteEntry(id) {
-        if (!confirm('削除しますか？')) return;
-        pokerData = pokerData.filter(entry => entry.id !== id);
-        localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(pokerData));
-        location.reload();
+    function deleteEntry(id) { if (!confirm('削除しますか？')) return; pokerData = pokerData.filter(entry => entry.id !== id); saveAndRefresh(); }
+    function autoSelectMode() { if (pokerData.length === 0) document.getElementById('typeInitial').checked = true; else document.getElementById('typeNormal').checked = true; }
+    function saveTitle() { const title = document.getElementById('sessionTitle').value; localStorage.setItem(STORAGE_KEY_TITLE, title); chart.options.plugins.title.text = title || 'Session Chart'; chart.update(); }
+    async function copyImageToClipboard() { const area = document.getElementById('reportArea'); const canvas = await html2canvas(area, { backgroundColor: '#1e1e1e', scale: 2 }); canvas.toBlob(blob => { navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).then(() => alert('コピーしました')); }); }
+    
+    function clearData() { 
+        if (confirm('全てリセットしますか？')) { 
+            pokerData = []; 
+            localStorage.removeItem(STORAGE_KEY_DATA); 
+            saveAndRefresh(); 
+        } 
     }
-
-    async function copyImageToClipboard() {
-        const area = document.getElementById('reportArea');
-        const canvas = await html2canvas(area, { backgroundColor: '#1e1e1e', scale: 2 });
-        canvas.toBlob(blob => {
-            navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-            alert('コピーしました');
-        });
-    }
-
-    function clearData() { if (confirm('全リセットしますか？')) { localStorage.clear(); location.reload(); } }
 
     document.getElementById('sessionTitle').value = localStorage.getItem(STORAGE_KEY_TITLE) || "";
-    initPicker();
-    setNow();
-    initChart();
-    renderHistory();
-    autoSelectMode();
+    initPicker(); setNow(); initChart(); renderHistory(); autoSelectMode();
 </script>
-
 </body>
 </html>
